@@ -67,6 +67,8 @@ contract StakingContract {
         uint8 _multiplier
     ) public onlyOwner {
         require(!pools[_duration].exists, "Pool already exists");
+        require(_minimumAmount > 0, "Minimum amount must be greater than zero");
+        require(_duration >= 0, "Duration must be greater than or equal to zero");
         require(_multiplier > 0, "Multiplier must be greater than zero");
 
         pools[_duration] = Pool({
@@ -115,7 +117,6 @@ contract StakingContract {
     }
 
     function stake(uint256 _amount, uint256 _duration) public payable {
-        require(_amount > 0, "Amount must be greater than zero");
         require(pools[_duration].exists, "Invalid duration");
         require(
             _amount >= pools[_duration].minimumAmount,
