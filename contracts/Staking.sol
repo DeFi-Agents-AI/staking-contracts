@@ -19,7 +19,7 @@ contract StakingContract {
         uint256 startTime;
         uint256 duration;
         uint8 multiplier;
-        bool withdrawn;
+        uint256 withdrawnTime;
     }
 
     address public owner;
@@ -68,7 +68,10 @@ contract StakingContract {
     ) public onlyOwner {
         require(!pools[_duration].exists, "Pool already exists");
         require(_minimumAmount > 0, "Minimum amount must be greater than zero");
-        require(_duration >= 0, "Duration must be greater than or equal to zero");
+        require(
+            _duration >= 0,
+            "Duration must be greater than or equal to zero"
+        );
         require(_multiplier > 0, "Multiplier must be greater than zero");
 
         pools[_duration] = Pool({
@@ -131,7 +134,7 @@ contract StakingContract {
                 startTime: block.timestamp,
                 duration: _duration,
                 multiplier: pools[_duration].multiplier,
-                withdrawn: false
+                withdrawnTime: 0
             })
         );
 
@@ -147,14 +150,14 @@ contract StakingContract {
         require(_index < stakes[msg.sender].length, "Invalid stake index");
 
         Stake storage userStake = stakes[msg.sender][_index];
-        require(!userStake.withdrawn, "Already withdrawn");
+        require(userStake.withdrawnTime == 0, "Already withdrawn");
 
         uint256 endTime = userStake.startTime + userStake.duration * 1 days;
         require(block.timestamp >= endTime, "Stake period not yet completed");
 
         stakingToken.safeTransfer(msg.sender, userStake.amount);
 
-        userStake.withdrawn = true;
+        userStake.withdrawnTime = block.timestamp;
 
         emit Withdrawn(msg.sender, _index, userStake.amount);
     }
