@@ -35,9 +35,16 @@ contract StakingContract {
         address indexed user,
         uint256 amount,
         uint256 duration,
-        uint8 multiplier
+        uint8 multiplier,
+        uint256 startTime,
+        uint256 index
     );
-    event Withdrawn(address indexed user, uint256 index, uint256 amount);
+    event Withdrawn(
+        address indexed user,
+        uint256 amount,
+        uint256 withdrawnTime,
+        uint256 index
+    );
     event OwnerChanged(address indexed oldOwner, address indexed newOwner);
 
     constructor(address _stakingToken) {
@@ -58,6 +65,11 @@ contract StakingContract {
         require(_owner != address(0), "Invalid address");
         emit OwnerChanged(owner, _owner);
         owner = _owner;
+    }
+
+    function emergencyWithdraw() external onlyOwner {
+        uint256 balance = stakingToken.balanceOf(address(this));
+        stakingToken.safeTransfer(owner, balance);
     }
 
     function createPool(
@@ -142,7 +154,9 @@ contract StakingContract {
             msg.sender,
             _amount,
             _duration,
-            pools[_duration].multiplier
+            pools[_duration].multiplier,
+            block.timestamp,
+            stakes[msg.sender].length - 1
         );
     }
 
@@ -153,17 +167,26 @@ contract StakingContract {
         require(userStake.withdrawnTime == 0, "Already withdrawn");
 
         uint256 endTime = userStake.startTime + userStake.duration * 1 days;
-        require(block.timestamp >= endTime, "Stake period not yet completed");
+        uint256 currentTime = block.timestamp;
+        require(currentTime >= endTime, "Stake period not yet completed");
 
         stakingToken.safeTransfer(msg.sender, userStake.amount);
 
-        userStake.withdrawnTime = block.timestamp;
+        userStake.withdrawnTime = currentTime;
 
-        emit Withdrawn(msg.sender, _index, userStake.amount);
+        emit Withdrawn(msg.sender, userStake.amount, currentTime, _index);
     }
 
-    function getStakes(address _user) public view returns (Stake[] memory) {
+    function getStakeLength(address _user) public view returns (uint256) {
+        return stakes[_user].length;
+    }
+
+    function getStake(address _user) public view returns (Stake[] memory) {
         return stakes[_user];
+    }
+
+    function getDurationLength() public view returns (uint256) {
+        return poolDurations.length;
     }
 
     function getDurations() public view returns (uint256[] memory) {
