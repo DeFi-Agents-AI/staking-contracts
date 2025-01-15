@@ -61,7 +61,7 @@ contract StakingContract {
         _;
     }
 
-    function setOwner(address _owner) public onlyOwner {
+    function setOwner(address _owner) external onlyOwner {
         require(_owner != address(0), "Invalid address");
         emit OwnerChanged(owner, _owner);
         owner = _owner;
@@ -77,13 +77,8 @@ contract StakingContract {
         uint256 _minimumAmount,
         uint256 _duration,
         uint8 _multiplier
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(!pools[_duration].exists, "Pool already exists");
-        require(_minimumAmount > 0, "Minimum amount must be greater than zero");
-        require(
-            _duration >= 0,
-            "Duration must be greater than or equal to zero"
-        );
         require(_multiplier > 0, "Multiplier must be greater than zero");
 
         pools[_duration] = Pool({
@@ -104,7 +99,7 @@ contract StakingContract {
         string memory _name,
         uint256 _minimumAmount,
         uint8 _newMultiplier
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(pools[_duration].exists, "Pool does not exist");
         require(_newMultiplier > 0, "Multiplier must be greater than zero");
 
@@ -115,7 +110,7 @@ contract StakingContract {
         emit PoolUpdated(pools[_duration].name, _duration, _newMultiplier);
     }
 
-    function deletePool(uint256 _duration) public onlyOwner {
+    function deletePool(uint256 _duration) external onlyOwner {
         require(pools[_duration].exists, "Pool does not exist");
 
         delete pools[_duration];
@@ -131,7 +126,7 @@ contract StakingContract {
         emit PoolDeleted(_duration);
     }
 
-    function stake(uint256 _amount, uint256 _duration) public payable {
+    function stake(uint256 _amount, uint256 _duration) external {
         require(pools[_duration].exists, "Invalid duration");
         require(
             _amount >= pools[_duration].minimumAmount,
@@ -160,7 +155,7 @@ contract StakingContract {
         );
     }
 
-    function withdraw(uint256 _index) public payable {
+    function withdraw(uint256 _index) external {
         require(_index < stakes[msg.sender].length, "Invalid stake index");
 
         Stake storage userStake = stakes[msg.sender][_index];
@@ -177,28 +172,28 @@ contract StakingContract {
         emit Withdrawn(msg.sender, userStake.amount, currentTime, _index);
     }
 
-    function getStakeLength(address _user) public view returns (uint256) {
+    function getStakeLength(address _user) external view returns (uint256) {
         return stakes[_user].length;
     }
 
-    function getStake(address _user) public view returns (Stake[] memory) {
+    function getStake(address _user) external view returns (Stake[] memory) {
         return stakes[_user];
     }
 
-    function getDurationLength() public view returns (uint256) {
+    function getDurationLength() external view returns (uint256) {
         return poolDurations.length;
     }
 
-    function getDurations() public view returns (uint256[] memory) {
+    function getDurations() external view returns (uint256[] memory) {
         return poolDurations;
     }
 
-    function getPool(uint256 _duration) public view returns (Pool memory) {
+    function getPool(uint256 _duration) external view returns (Pool memory) {
         require(pools[_duration].exists, "Invalid duration");
         return pools[_duration];
     }
 
-    function getAllPools() public view returns (Pool[] memory) {
+    function getAllPools() external view returns (Pool[] memory) {
         Pool[] memory allPools = new Pool[](poolDurations.length);
         for (uint256 i = 0; i < poolDurations.length; i++) {
             allPools[i] = pools[poolDurations[i]];
